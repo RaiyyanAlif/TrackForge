@@ -16,7 +16,7 @@
 
 ## 📌 Overview
 
-**TrackForge** is a robotics project that combines autonomous line following, wireless communication, voice-based commands, and camera-based image capture into a single robotic platform.
+**TrackForge** is a robotics project that integrates autonomous line following, wireless communication, voice-based movement control, and camera-based image capture into a single robotic platform.
 
 The robot follows a line using an array of infrared sensors and an Arduino Mega-based controller. An ESP8266 provides a wireless communication bridge, allowing a Python application running on a computer to send commands over Wi-Fi.
 
@@ -27,13 +27,14 @@ A phone camera running an IP Webcam application can provide images for capture a
 - 🛣️ **Autonomous line following** using an 8-channel analog IR sensor array.
 - 🎙️ **Voice-controlled operation** through a Python desktop application.
 - 📡 **Wireless communication** between the computer, ESP8266, and Arduino Mega.
-- 🛑 **Emergency stop** through a recognized voice command.
+- ↪️ **Directional rotation commands** for rotating left and right.
+- 🛑 **Stop and emergency-stop voice commands.**
 - 📷 **Camera-based image capture** using a phone camera stream.
 - 💾 **Mission data handling** through the desktop application.
 - 🔋 **Standalone robot operation** using a battery-powered robot platform.
 - 🧩 **Modular architecture** with separate computer software and microcontroller firmware.
 
-> **Project scope:** Voice recognition and camera handling run on the computer. The ESP8266 acts as a communication bridge, while the Arduino Mega controls the robot. TrackForge does not currently claim onboard AI vision or autonomous object recognition.
+> **Project scope:** Voice recognition and camera handling run on the computer. The ESP8266 acts as a communication bridge, while the Arduino Mega controls the robot. Onboard AI vision and autonomous object recognition are not claimed features of the current version.
 
 ---
 
@@ -55,10 +56,10 @@ flowchart TD
 ### 🔄 How It Works
 
 1. The Python application listens for voice input.
-2. Recognized commands are converted into robot control messages.
+2. Recognized voice commands are converted into robot-control messages.
 3. The computer sends commands over Wi-Fi using TCP.
-4. The ESP8266 forwards commands to the Arduino Mega over serial communication.
-5. The Arduino manages the robot's movement and line-following behavior.
+4. The ESP8266 forwards commands to the Arduino Mega through serial communication.
+5. The Arduino manages line following, movement, and directional rotation.
 6. When requested, the computer can capture images from the phone camera stream and save mission-related data.
 
 ---
@@ -112,7 +113,7 @@ Operation1122/
 └── .gitignore
 ```
 
-**Module responsibilities**
+### Module Responsibilities
 
 | File | Responsibility |
 |---|---|
@@ -122,7 +123,7 @@ Operation1122/
 | `requirements.txt` | Python dependency list |
 | `.gitignore` | Excludes local configuration, environments, backups, and generated files |
 
-*The `requirements.txt` file should be present in the repository before using the installation command below.*
+*The `requirements.txt` file should be present in the repository before using the corresponding installation command below.*
 
 ---
 
@@ -146,7 +147,11 @@ py -3.10 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-If PowerShell blocks environment activation, you can run the Python executable directly from `.venv\Scripts\python.exe` instead.
+If PowerShell blocks environment activation, use the virtual environment's Python executable directly:
+
+```powershell
+.\.venv\Scripts\python.exe --version
+```
 
 ### 3. Install Python Dependencies
 
@@ -157,7 +162,7 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-If you have not created that file yet, install the project's known dependencies:
+If the file has not been created yet, install the known dependencies:
 
 ```powershell
 python -m pip install SpeechRecognition pyttsx3 requests PyAudio
@@ -210,7 +215,7 @@ Wait for the application to initialize, then use the supported voice commands li
 
 ## 🎙️ Voice Command Reference
 
-The following phrases are recognized by the current voice-control application. Recognition may depend on microphone quality, background noise, and speech-recognition results.
+TrackForge supports voice commands for status checks, line following, directional rotation, stopping, and camera/data operations.
 
 | Voice command | Action |
 |---|---|
@@ -221,6 +226,8 @@ The following phrases are recognized by the current voice-control application. R
 | `Start following` | Start or resume line following |
 | `Continue following` | Resume line following |
 | `Resume following` | Resume line following |
+| `Rotate left` | Rotate the robot left |
+| `Rotate right` | Rotate the robot right |
 | `Stop now` | Stop the robot |
 | `Stop robot` | Stop the robot |
 | `Halt` | Stop the robot |
@@ -230,11 +237,16 @@ The following phrases are recognized by the current voice-control application. R
 | `Send data` | Request mission-data/report handling |
 | `Save mission data` | Request mission-data/report handling |
 
-### ⚠️ Unsupported Commands
+### 🎯 Movement Control
 
-The current version does **not** support the `Rotate left` or `Rotate right` voice commands. They are disabled in the current application.
+- **Start following:** Activates line-following behavior.
+- **Rotate left:** Requests a left rotation.
+- **Rotate right:** Requests a right rotation.
+- **Stop / Halt:** Stops robot movement.
 
-The exact effect of a data/report command depends on the corresponding implementation in `operation1122_voice.py`.
+The exact rotation duration, turning behavior, and return-to-line behavior depend on the current firmware implementation and configured control logic.
+
+Voice recognition may vary with microphone quality, background noise, and speech-recognition results. Use the command phrases implemented in the current Python application.
 
 ---
 
@@ -295,7 +307,7 @@ The computer handles image capture and storage. This makes it possible to collec
 - Check that the TB6612FNG motor driver's voltage and current ratings are appropriate for the motors.
 - Follow the correct logic-voltage requirements for the ESP8266 and Arduino Mega serial connection.
 - Establish a common ground between interconnected electronics where required by the circuit.
-- Use suitable voltage conversion or level shifting for serial signals where necessary; the ESP8266 GPIO is not 5 V tolerant.
+- Use suitable voltage conversion or level shifting for serial signals where necessary; ESP8266 GPIO pins are not 5 V tolerant.
 - Test motor movement with the wheels lifted off the ground before running the robot on a track.
 - Keep a physical way to disconnect motor power during testing.
 - Do not treat a software voice command as a guaranteed hardware emergency stop.
@@ -332,6 +344,17 @@ The computer handles image capture and storage. This makes it possible to collec
 - Verify the sensor pin mapping and calibration logic.
 - Check the motor-driver wiring and motor direction.
 - Inspect the line-following logic and control parameters in the Mega firmware.
+
+</details>
+
+<details>
+<summary><b>Rotate left or Rotate right does not work</b></summary>
+
+- Confirm that the voice-control application recognizes the phrase.
+- Check that the ESP8266 forwards the command correctly.
+- Verify that the Arduino firmware implements the matching command.
+- Check motor direction, wiring, and power supply.
+- Review the rotation timing and movement logic in the current firmware.
 
 </details>
 
